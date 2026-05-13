@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing role and artisan/customer specific details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["artisan", "customer", "admin"] },
+        "village": { "type": "string" },
+        "profileImage": { "type": "string" },
+        "languagePreference": { "type": "string" },
+        "artisanType": { "type": "string" },
+        "experience": { "type": "number" },
+        "heritageStory": { "type": "string" }
+      },
+      "required": ["userId", "name", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Pottery product details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "benefit": { "type": "string" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "price": { "type": "number" },
+        "size": { "type": "string" },
+        "usageInstructions": { "type": "string" },
+        "availability": { "type": "string" },
+        "ecoScore": { "type": "number" },
+        "plasticReduced": { "type": "string" },
+        "artisanId": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "artisanId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Product catalog"
+    }
+  }
+}

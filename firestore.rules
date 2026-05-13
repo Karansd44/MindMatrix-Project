@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Role Lookups
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && getUserData(request.auth.uid).role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isArtisan() {
+      return hasRole('artisan');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- User Profiles ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.userId == request.auth.uid &&
+               data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+               data.role in ['artisan', 'customer'] &&
+               (data.get('phone', '') is string && data.get('phone', '').size() <= 20);
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      
+      // Allow create without email verification (for immediate data storage after registration)
+      allow create: if isSignedIn() && isValidUser(incoming());
+      
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'village', 'profileImage', 'languagePreference', 'experience', 'heritageStory', 'artisanType']) &&
+                    incoming().role == existing().role; // Role is immutable for self-updates
+                   
+      allow delete: if isAdmin();
+    }
+
+    // --- Products ---
+    match /products/{productId} {
+      function isValidProduct(data) {
+        return isValidId(data.id) &&
+               data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+               data.price is number && data.price >= 0 &&
+               data.artisanId == request.auth.uid;
+      }
+
+      allow read: if true; // Catalog is public
+
+      allow create: if isArtisan() && isValidProduct(incoming());
+      
+      allow update: if (isOwner(existing().artisanId) && isValidProduct(incoming()) && 
+                        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'benefit', 'category', 'imageUrl', 'price', 'size', 'usageInstructions', 'availability', 'ecoScore', 'plasticReduced'])) ||
+                    isAdmin();
+
+      allow delete: if isOwner(existing().artisanId) || isAdmin();
+    }
+  }
+}
