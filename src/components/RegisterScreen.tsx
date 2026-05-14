@@ -8,15 +8,18 @@ import { createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile }
 import { doc, setDoc } from 'firebase/firestore';
 import { UserPlus, Mail, Lock, User, Phone, MapPin, Briefcase, Languages, Camera, AlertCircle } from 'lucide-react';
 import { auth, db } from '../lib/firebase';
+import { createUserProfile } from '../services/userService';
 import AuthLayout from './AuthLayout';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../types';
+import { useToast } from './ToastProvider';
 
 interface RegisterScreenProps {
   onLoginClick: () => void;
 }
 
 export default function RegisterScreen({ onLoginClick }: RegisterScreenProps) {
+  const toast = useToast();
   const [role, setRole] = useState<'artisan' | 'customer'>('customer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,8 +75,8 @@ export default function RegisterScreen({ onLoginClick }: RegisterScreenProps) {
     }
 
     try {
-      await setDoc(doc(db, 'users', userId), profileData, { merge: true });
-      console.log('Profile saved successfully to Firestore');
+      await createUserProfile(userId, profileData);
+      console.log('Profile saved successfully via userService');
     } catch (firestoreError: any) {
       console.error('Firestore error:', firestoreError);
       throw new Error(`Failed to save profile: ${firestoreError.message}`);
@@ -110,8 +113,14 @@ export default function RegisterScreen({ onLoginClick }: RegisterScreenProps) {
       // Try to save profile - it will work if email gets verified
       try {
         await saveProfile(user.uid);
+        console.log('✅ Registration complete - profile saved for', user.uid);
+        toast.push('success', `Welcome! Profile saved. You are now a ${role}.`);
+        // Give Firestore a moment to persist before AuthContext fetches
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('Profile should now be available in Firestore');
       } catch (profileError: any) {
         console.warn('Initial profile save may require email verification. User can complete profile after verification.');
+        toast.push('info', 'Account created. Complete profile after verification.');
       }
     } catch (err: any) {
       // If the email is already in use, don't attempt automatic sign-in — prompt user instead
@@ -121,7 +130,9 @@ export default function RegisterScreen({ onLoginClick }: RegisterScreenProps) {
         return;
       }
 
-      setError(getAuthErrorMessage(err));
+      const msg = getAuthErrorMessage(err);
+      setError(msg);
+      toast.push('error', msg);
     } finally {
       setLoading(false);
     }

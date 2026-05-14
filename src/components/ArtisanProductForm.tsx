@@ -6,9 +6,11 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion } from 'motion/react';
 import { X, Upload, Plus, Trash2, Save, Send } from 'lucide-react';
-import { ArtisanProduct, Material } from '../types';
+import { ArtisanProduct, MaterialUsage } from '../types';
 import { db } from '../lib/firebase';
 import { setDoc, doc, Timestamp, collection } from 'firebase/firestore';
+import { saveProduct } from '../services/productService';
+import { useToast } from './ToastProvider';
 
 interface ArtisanProductFormProps {
   artisanId: string;
@@ -23,9 +25,11 @@ export default function ArtisanProductForm({
   onClose, 
   onSuccess 
 }: ArtisanProductFormProps) {
+  const toast = useToast();
   const [formData, setFormData] = useState<Partial<ArtisanProduct>>({
     name: product?.name || '',
     benefit: product?.benefit || '',
+    description: '',
     story: product?.story || '',
     category: product?.category || 'cooking',
     price: product?.price || 0,
@@ -79,29 +83,59 @@ export default function ArtisanProductForm({
       alert('Product name is required');
       return;
     }
+    if (!formData.description?.trim()) {
+      alert('Product description is required');
+      return;
+    }
 
     setIsSaving(true);
     try {
-      const productId = product?.id || doc(collection(db, 'products')).id;
-      await setDoc(doc(db, 'products', productId), {
-        ...formData,
-        imageUrl: imageUrl || 'https://via.placeholder.com/400',
+      const productId = product?.id || undefined;
+      const productData: any = {
+        id: productId,
         artisanId,
+        name: formData.name,
+        benefit: formData.benefit || '',
+        description: formData.description || '',
+        story: formData.story || '',
+        category: formData.category || 'cooking',
+        price: formData.price || 0,
+        compareAtPrice: formData.compareAtPrice,
+        currency: formData.currency || 'INR',
+        sku: formData.sku || '',
+        quantity: formData.quantity || 0,
+        lowStockThreshold: formData.lowStockThreshold || 5,
         status: publishNow ? 'active' : 'draft',
-        createdAt: product?.createdAt || Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        ecoScore: formData.craftDetails?.ecoScore || 85,
+        imageUrl: imageUrl || 'https://via.placeholder.com/400',
         availability: publishNow ? 'in-stock' : 'on-order',
-        size: ''
-      });
-      
+        ecoScore: formData.craftDetails?.ecoScore || 85,
+        plasticReduced: '',
+        usageInstructions: '',
+        materials: formData.materials || [],
+        craftDetails: formData.craftDetails || {
+          technique: '',
+          timeToMake: 0,
+          ecoScore: 85,
+          certifications: []
+        },
+        createdAt: product?.createdAt || Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+
+      const res = await saveProduct(productData as any);
+      // If created, ensure returned id is used
+      if (res && (res as any).id) {
+        productData.id = (res as any).id;
+      }
+
       setTimeout(() => {
         setIsSaving(false);
+        toast.push('success', 'Product saved');
         onSuccess();
       }, 500);
     } catch (err) {
       console.error('Failed to save product:', err);
-      alert('Failed to save product');
+      toast.push('error', 'Failed to save product');
       setIsSaving(false);
     }
   }, [formData, imageUrl, artisanId, product, onSuccess]);
@@ -162,10 +196,16 @@ export default function ArtisanProductForm({
               className="w-full h-12 px-4 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 focus:border-transparent outline-none font-semibold"
             />
             <textarea
-              placeholder="Product Benefit"
+              placeholder="Product Benefits (Health, Eco, etc.)"
               value={formData.benefit || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, benefit: e.target.value }))}
-              className="w-full min-h-24 p-4 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 focus:border-transparent outline-none font-semibold resize-none"
+              className="w-full min-h-20 p-4 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 focus:border-transparent outline-none font-semibold resize-none"
+            />
+            <textarea
+              placeholder="Product Description"
+              value={formData.description || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              className="w-full min-h-20 p-4 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 focus:border-transparent outline-none font-semibold resize-none"
             />
             <textarea
               placeholder="Craft Story (Cultural/Heritage)"

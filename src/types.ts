@@ -61,41 +61,76 @@ export interface CardState {
 // ARTISAN BUSINESS TYPES
 export type ProductStatus = 'draft' | 'active' | 'sold_out' | 'archived';
 export type OrderStatus = 'pending' | 'accepted' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'rejected';
+export type CustomRequestStatus = 'pending' | 'rejected' | 'counter_offered' | 'accepted' | 'completed';
 
-export interface ArtisanProduct extends Product {
+// Enhanced ArtisanProduct with full business requirements
+export interface ArtisanProduct {
+  id: string;
+  artisanId: string;
+  name: string;
+  benefit: string;           // Health/eco benefits
+  description: string;       // Product description
+  story: string;             // Cultural/craft heritage story
+  category: 'cooking' | 'storage' | 'wellness';
+  price: number;
+  compareAtPrice?: number;   // For discounts
+  currency: string;          // Default 'INR'
+  sku: string;               // Stock keeping unit
+  quantity: number;          // Current stock
+  lowStockThreshold: number; // Auto-alert threshold
   status: ProductStatus;
-  sku: string;
-  quantity: number;
-  lowStockThreshold: number;
-  compareAtPrice?: number;
-  currency: string;
-  story: string;
-  materials: Material[];
+  imageUrl: string;          // Primary image
+  images?: string[];         // Additional Firebase Storage URLs
+  availability: 'in-stock' | 'on-order' | 'out-of-stock';
+  ecoScore: number;          // 1-100 (1-10 internally converted)
+  plasticReduced?: string;   // e.g. "2.5kg/year"
+  usageInstructions?: string;
+  materials: MaterialUsage[]; // Materials used in this product
   craftDetails: {
-    technique: string;
-    timeToMake: number;
-    ecoScore: number;
-    certifications: string[];
+    technique: string;       // Hand-thrown, wheel-thrown, etc.
+    timeToMake: number;      // Hours to craft
+    ecoScore: number;        // 1-10
+    certifications: string[]; // Organic, Fair Trade, etc.
   };
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: any;            // Firestore Timestamp
+  updatedAt: any;            // Firestore Timestamp
 }
 
-export interface Material {
+// Material usage in a specific product
+export interface MaterialUsage {
   id?: string;
   name: string;
-  category: string;
-  quantityUsed: number;
-  unit: string;
-  costPerUnit: number;
+  category: string;          // Clay type, glaze, etc.
+  quantityUsed: number;      // Amount used per unit product
+  unit: string;              // kg, grams, pieces, etc.
+  costPerUnit: number;       // Cost to artisan
 }
 
+// Raw material/supply inventory
+export interface SupplyMaterial {
+  id: string;
+  artisanId: string;
+  name: string;
+  category: string;          // Clay, Glaze, Tools, Packaging, etc.
+  currentStock: number;      // Quantity in hand
+  unit: string;              // kg, meters, pieces, liters
+  costPerUnit: number;       // Purchase price per unit
+  supplier?: string;
+  supplierContact?: string;
+  lastPurchased: any;        // Firestore Timestamp
+  lowStockThreshold: number; // Alert when below this
+  linkedProducts: string[];  // Product IDs that use this material
+  reorderPoint?: number;
+}
+
+// Enhanced Order with full fulfillment workflow
 export interface Order {
   id: string;
   artisanId: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   productId: string;
   productName: string;
   productImage: string;
@@ -103,37 +138,52 @@ export interface Order {
   totalPrice: number;
   currency: string;
   status: OrderStatus;
-  createdAt: Date;
-  updatedAt?: Date;
   trackingNumber?: string;
+  estimatedDelivery?: any;   // Firestore Timestamp
   notes?: string;
+  reasonForRejection?: string;
+  createdAt: any;            // Firestore Timestamp
+  updatedAt?: any;
 }
 
+// Custom order requests from customers
 export interface CustomRequest {
   id: string;
   artisanId: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   description: string;
   budget?: number;
   timeline?: string;
-  status: 'pending' | 'rejected' | 'counter_offered' | 'accepted' | 'completed';
-  createdAt: Date;
+  attachmentUrls?: string[];
+  requestedFeatures?: string[];
+  status: CustomRequestStatus;
+  artisanCounterOffer?: {
+    proposedPrice: number;
+    proposedTimeline: string;
+    notes: string;
+  };
+  createdAt: any;            // Firestore Timestamp
+  respondedAt?: any;
 }
 
 export interface WorkshopEvent {
   id: string;
   artisanId: string;
   title: string;
-  date: Date;
-  startTime: string;
+  date: any;                 // Firestore Timestamp
+  startTime: string;         // HH:mm format
   endTime: string;
   type: 'workshop' | 'custom_order' | 'personal';
   description?: string;
+  location?: string;
   maxParticipants?: number;
   enrolled?: number;
+  enrolledStudents?: string[]; // customer IDs
   reminders: boolean;
+  status?: 'scheduled' | 'completed' | 'cancelled';
 }
 
 export interface MaterialInventory {
@@ -145,11 +195,41 @@ export interface MaterialInventory {
   unit: string;
   costPerUnit: number;
   supplier?: string;
-  lastPurchased: Date;
+  supplierContact?: string;
+  lastPurchased: any;        // Firestore Timestamp
   lowStockThreshold: number;
   linkedProducts: string[];
+  reorderPoint?: number;
+  usageHistory?: UsageLog[];
 }
 
+export interface UsageLog {
+  productId: string;
+  quantityUsed: number;
+  date: any;                 // Firestore Timestamp
+  batchNumber?: string;
+}
+
+// Pricing & Cost Calculator
+export interface CostBreakdown {
+  materialsCost: number;     // Sum of (quantityUsed × costPerUnit)
+  laborCost: number;         // Hours × hourlyRate
+  overhead: number;          // % of materials + labor
+  totalCost: number;         // materials + labor + overhead
+}
+
+export interface PricingSuggestion {
+  productId: string;
+  costBreakdown: CostBreakdown;
+  suggestedWholesale: number;  // Cost + 30%
+  suggestedRetail: number;     // Cost + 60%
+  suggestedMarketplace: number; // Cost + 50%
+  currentPrice: number;
+  potentialMargin: number;
+  marginPercentage: number;
+}
+
+// Enhanced Analytics
 export interface ArtisanAnalytics {
   id: string;
   artisanId: string;
@@ -157,7 +237,43 @@ export interface ArtisanAnalytics {
   totalRevenue: number;
   ordersCount: number;
   averageOrderValue: number;
-  topProduct?: string;
+  topProducts?: { productId: string; name: string; sales: number }[];
+  topCustomers?: { customerId: string; name: string; orders: number }[];
   conversionRate: number;
-  lastUpdated: Date;
+  repeatCustomerRate?: number;
+  lastUpdated: any;          // Firestore Timestamp
+}
+
+export interface SalesPeriodComparison {
+  currentPeriodRevenue: number;
+  previousPeriodRevenue: number;
+  percentageChange: number;
+  ordersCurrentPeriod: number;
+  ordersPreviousPeriod: number;
+}
+
+// Artisan Profile Showcase
+export interface ArtisanProfileShowcase {
+  artisanId: string;
+  coverImageUrl?: string;
+  bio: string;
+  craftJourney: string;
+  techniques: TechniqueShowcase[];
+  processVideoUrl?: string;
+  followers?: number;
+  following?: number;
+  verificationStatus?: 'unverified' | 'verified' | 'premium';
+  socialLinks?: {
+    instagram?: string;
+    whatsapp?: string;
+    website?: string;
+  };
+}
+
+export interface TechniqueShowcase {
+  id?: string;
+  name: string;
+  description: string;
+  imageUrl?: string;
+  videoUrl?: string;
 }

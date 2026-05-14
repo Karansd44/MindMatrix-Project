@@ -34,6 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (profileDoc.exists()) {
             console.log('✅ User profile loaded from Firestore');
             setProfile(profileDoc.data() as AppUser);
+            const data = profileDoc.data() as AppUser;
+            console.log('Profile data:', { userId: firebaseUser.uid, role: data.role, name: data.name, phone: data.phone });
           } else {
             console.warn('⚠️ User authenticated but profile not found in Firestore - may be still saving');
             setProfile(null);

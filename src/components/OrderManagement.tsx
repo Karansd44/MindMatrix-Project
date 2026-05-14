@@ -5,12 +5,21 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, MessageCircle, Package, CheckCircle2, XCircle } from 'lucide-react';
+import { X, MessageCircle, Package, CheckCircle2, XCircle, Truck, Calendar, Copy } from 'lucide-react';
 import { Order, OrderStatus } from '../types';
+import { db } from '../lib/firebase';
+import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 
 interface OrderManagementProps {
   orders: Order[];
   onClose: () => void;
+}
+
+interface OrderEditState {
+  orderId: string;
+  trackingNumber: string;
+  estimatedDelivery: string;
+  rejectionReason: string;
 }
 
 const STATUS_COLORS: Record<OrderStatus, { bg: string; text: string; label: string }> = {
@@ -25,9 +34,15 @@ const STATUS_COLORS: Record<OrderStatus, { bg: string; text: string; label: stri
 
 export default React.memo(function OrderManagement({ orders, onClose }: OrderManagementProps) {
   const [activeTab, setActiveTab] = useState<OrderStatus>('pending');
+  const [editingOrder, setEditingOrder] = useState<OrderEditState | null>(null);
+  const [rejectingOrder, setRejectingOrder] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [copiedTracking, setCopiedTracking] = useState<string | null>(null);
 
   const tabs: { label: string; status: OrderStatus }[] = [
     { label: 'New', status: 'pending' },
+    { label: 'Accepted', status: 'accepted' },
     { label: 'Processing', status: 'processing' },
     { label: 'Shipped', status: 'shipped' },
     { label: 'Completed', status: 'delivered' },
@@ -39,19 +54,82 @@ export default React.memo(function OrderManagement({ orders, onClose }: OrderMan
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [orders, activeTab]);
 
-  const handleAcceptOrder = useCallback((orderId: string) => {
-    console.log('Accept order:', orderId);
-    // Update order status in Firestore
+  const handleAcceptOrder = useCallback(async (orderId: string) => {
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'accepted',
+        updatedAt: Timestamp.now(),
+      });
+    } catch (err) {
+      console.error('Failed to accept order:', err);
+      alert('Failed to accept order');
+    } finally {
+      setIsSaving(false);
+    }
   }, []);
 
-  const handleRejectOrder = useCallback((orderId: string) => {
-    console.log('Reject order:', orderId);
-    // Update order status in Firestore
+  const handleRejectOrder = useCallback(async (orderId: string, reason: string) => {
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'rejected',
+        reasonForRejection: reason,
+        updatedAt: Timestamp.now(),
+      });
+      setRejectingOrder(null);
+      setRejectReason('');
+    } catch (err) {
+      console.error('Failed to reject order:', err);
+      alert('Failed to reject order');
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
+  const handleShipOrder = useCallback(async (orderId: string, trackingNumber: string, estimatedDelivery: string) => {
+    setIsSaving(true);
+    try {
+      const deliveryDate = new Date(estimatedDelivery);
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'shipped',
+        trackingNumber,
+        estimatedDelivery: Timestamp.fromDate(deliveryDate),
+        updatedAt: Timestamp.now(),
+      });
+      setEditingOrder(null);
+    } catch (err) {
+      console.error('Failed to ship order:', err);
+      alert('Failed to ship order');
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
+  const handleMarkDelivered = useCallback(async (orderId: string) => {
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'delivered',
+        updatedAt: Timestamp.now(),
+      });
+    } catch (err) {
+      console.error('Failed to mark delivered:', err);
+      alert('Failed to mark delivered');
+    } finally {
+      setIsSaving(false);
+    }
   }, []);
 
   const handleMessageBuyer = useCallback((order: Order) => {
     const message = `Hi ${order.customerName}, regarding your order for ${order.productName}...`;
     window.open(`https://wa.me/${order.customerPhone}?text=${encodeURIComponent(message)}`);
+  }, []);
+
+  const copyToClipboard = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedTracking(text);
+    setTimeout(() => setCopiedTracking(null), 2000);
   }, []);
 
   return (
@@ -157,13 +235,56 @@ export default React.memo(function OrderManagement({ orders, onClose }: OrderMan
                     </p>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {order.status === 'pending' && (
-                      <>
+                  {/* Tracking Info */}
+                  {order.trackingNumber && (
+                    <div className="mb-4 p-3 bg-earth-light/50 rounded-xl">
+                      <p className="text-xs text-earth-dark/60 font-bold mb-1">TRACKING #</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-mono font-bold text-earth-dark">{order.trackingNumber}</p>
                         <button
-                          onClick={() => handleRejectOrder(order.id)}
-                          className="h-12 rounded-xl bg-red-50 text-red-600 font-black text-sm hover:bg-red-100 transition-colors active:scale-95 flex items-center justify-center gap-2"
+                          onClick={() => copyToClipboard(order.trackingNumber!)}
+                          className="p-1.5 hover:bg-earth-dark/10 rounded-lg transition-colors"
+                          title="Copy tracking number"
+                        >
+                          {copiedTracking === order.trackingNumber ? (
+                            <CheckCircle2 size={16} className="text-green-600" />
+                          ) : (
+                            <Copy size={16} className="text-earth-dark/60" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Estimated Delivery */}
+                  {order.estimatedDelivery && (
+                    <div className="mb-4 p-3 bg-earth-light/50 rounded-xl">
+                      <p className="text-xs text-earth-dark/60 font-bold mb-1">EST. DELIVERY</p>
+                      <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-earth-primary" />
+                        <p className="text-sm font-bold text-earth-dark">
+                          {order.estimatedDelivery.toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejection Reason */}
+                  {order.status === 'rejected' && order.reasonForRejection && (
+                    <div className="mb-4 p-3 bg-red-50 rounded-xl border border-red-100">
+                      <p className="text-xs text-red-600 font-bold mb-1">REJECTION REASON</p>
+                      <p className="text-sm text-red-700">{order.reasonForRejection}</p>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-3">
+                    {order.status === 'pending' && (
+                      <div className="grid grid-cols-3 gap-3">
+                        <button
+                          onClick={() => setRejectingOrder(order.id)}
+                          disabled={isSaving}
+                          className="h-12 rounded-xl bg-red-50 text-red-600 font-black text-sm hover:bg-red-100 disabled:opacity-50 transition-colors active:scale-95 flex items-center justify-center gap-2"
                         >
                           <XCircle size={16} />
                           Reject
@@ -176,28 +297,94 @@ export default React.memo(function OrderManagement({ orders, onClose }: OrderMan
                         </button>
                         <button
                           onClick={() => handleAcceptOrder(order.id)}
-                          className="h-12 rounded-xl bg-earth-primary text-white font-black text-sm hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                          disabled={isSaving}
+                          className="h-12 rounded-xl bg-earth-primary text-white font-black text-sm hover:shadow-lg disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
                           <CheckCircle2 size={16} />
                           Accept
                         </button>
-                      </>
+                      </div>
                     )}
-                    {order.status === 'processing' && (
-                      <>
+
+                    {order.status === 'accepted' && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={() => setEditingOrder({
+                            orderId: order.id,
+                            trackingNumber: order.trackingNumber || '',
+                            estimatedDelivery: order.estimatedDelivery ? order.estimatedDelivery.toISOString().split('T')[0] : '',
+                            rejectionReason: ''
+                          })}
+                          className="h-12 rounded-xl bg-earth-primary text-white font-black text-sm hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Truck size={16} />
+                          Ship Order
+                        </button>
                         <button
                           onClick={() => handleMessageBuyer(order)}
-                          className="h-12 rounded-xl bg-earth-light text-earth-dark font-black text-sm hover:bg-earth-light/80 transition-colors active:scale-95 col-span-3 flex items-center justify-center gap-2"
+                          className="h-12 rounded-xl bg-earth-light text-earth-dark font-black text-sm hover:bg-earth-light/80 transition-colors active:scale-95 flex items-center justify-center gap-2"
                         >
                           <MessageCircle size={16} />
-                          Message Buyer
                         </button>
-                      </>
+                      </div>
                     )}
-                    {['shipped', 'delivered'].includes(order.status) && (
+
+                    {order.status === 'processing' && (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setEditingOrder({
+                            orderId: order.id,
+                            trackingNumber: order.trackingNumber || '',
+                            estimatedDelivery: order.estimatedDelivery ? order.estimatedDelivery.toISOString().split('T')[0] : '',
+                            rejectionReason: ''
+                          })}
+                          className="flex-1 h-12 rounded-xl bg-earth-primary text-white font-black text-sm hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Truck size={16} />
+                          Mark Shipped
+                        </button>
+                        <button
+                          onClick={() => handleMessageBuyer(order)}
+                          className="p-3 h-12 w-12 rounded-xl bg-earth-light text-earth-dark font-black hover:bg-earth-light/80 transition-colors active:scale-95 flex items-center justify-center"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
+                      </div>
+                    )}
+
+                    {order.status === 'shipped' && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={() => handleMarkDelivered(order.id)}
+                          disabled={isSaving}
+                          className="h-12 rounded-xl bg-green-50 text-green-600 font-black text-sm hover:bg-green-100 disabled:opacity-50 transition-colors active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle2 size={16} />
+                          Delivered
+                        </button>
+                        <button
+                          onClick={() => handleMessageBuyer(order)}
+                          className="h-12 rounded-xl bg-earth-light text-earth-dark font-black text-sm hover:bg-earth-light/80 transition-colors active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
+                      </div>
+                    )}
+
+                    {order.status === 'delivered' && (
                       <button
                         onClick={() => handleMessageBuyer(order)}
-                        className="h-12 rounded-xl bg-earth-light text-earth-dark font-black text-sm hover:bg-earth-light/80 transition-colors active:scale-95 col-span-3 flex items-center justify-center gap-2"
+                        className="h-12 rounded-xl bg-earth-light text-earth-dark font-black text-sm hover:bg-earth-light/80 transition-colors active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle size={16} />
+                        Message Buyer
+                      </button>
+                    )}
+
+                    {order.status === 'rejected' && (
+                      <button
+                        onClick={() => handleMessageBuyer(order)}
+                        className="h-12 rounded-xl bg-earth-light text-earth-dark font-black text-sm hover:bg-earth-light/80 transition-colors active:scale-95 flex items-center justify-center gap-2"
                       >
                         <MessageCircle size={16} />
                         Message Buyer
@@ -210,6 +397,113 @@ export default React.memo(function OrderManagement({ orders, onClose }: OrderMan
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Reject Order Modal */}
+      <AnimatePresence>
+        {rejectingOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl"
+            >
+              <h3 className="text-lg font-black text-earth-dark mb-4">Reject Order</h3>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Reason for rejection..."
+                className="w-full min-h-24 p-3 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 outline-none resize-none mb-4"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setRejectingOrder(null);
+                    setRejectReason('');
+                  }}
+                  disabled={isSaving}
+                  className="flex-1 h-12 rounded-xl bg-earth-light text-earth-dark font-black disabled:opacity-50 transition-colors active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleRejectOrder(rejectingOrder, rejectReason)}
+                  disabled={isSaving || !rejectReason.trim()}
+                  className="flex-1 h-12 rounded-xl bg-red-600 text-white font-black hover:shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                >
+                  {isSaving ? 'Rejecting...' : 'Reject'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Ship Order Modal */}
+      <AnimatePresence>
+        {editingOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl"
+            >
+              <h3 className="text-lg font-black text-earth-dark mb-4">Ship Order</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-xs font-black text-earth-dark/60 mb-2 block">TRACKING NUMBER</label>
+                  <input
+                    type="text"
+                    value={editingOrder.trackingNumber}
+                    onChange={(e) => setEditingOrder({ ...editingOrder, trackingNumber: e.target.value })}
+                    placeholder="e.g., TRACK123456789"
+                    className="w-full px-4 py-3 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 outline-none"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs font-black text-earth-dark/60 mb-2 block">ESTIMATED DELIVERY</label>
+                  <input
+                    type="date"
+                    value={editingOrder.estimatedDelivery}
+                    onChange={(e) => setEditingOrder({ ...editingOrder, estimatedDelivery: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-earth-dark/10 focus:ring-2 focus:ring-earth-primary/20 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditingOrder(null)}
+                  disabled={isSaving}
+                  className="flex-1 h-12 rounded-xl bg-earth-light text-earth-dark font-black disabled:opacity-50 transition-colors active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleShipOrder(editingOrder.orderId, editingOrder.trackingNumber, editingOrder.estimatedDelivery)}
+                  disabled={isSaving || !editingOrder.trackingNumber.trim() || !editingOrder.estimatedDelivery}
+                  className="flex-1 h-12 rounded-xl bg-earth-primary text-white font-black hover:shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                >
+                  {isSaving ? 'Shipping...' : 'Ship'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 });

@@ -48,46 +48,183 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isArtisanOwner(artisanId) {
+      return isSignedIn() && request.auth.uid == artisanId && isArtisan();
+    }
+
     // --- User Profiles ---
     match /users/{userId} {
       function isValidUser(data) {
         return data.userId == request.auth.uid &&
                data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-               data.role in ['artisan', 'customer'] &&
+               data.role in ['artisan', 'customer', 'admin'] &&
                (data.get('phone', '') is string && data.get('phone', '').size() <= 20);
       }
 
       allow get: if isSignedIn();
       allow list: if isAdmin();
       
-      // Allow create without email verification (for immediate data storage after registration)
       allow create: if isSignedIn() && isValidUser(incoming());
       
       allow update: if isOwner(userId) && isValidUser(incoming()) && 
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'village', 'profileImage', 'languagePreference', 'experience', 'heritageStory', 'artisanType']) &&
-                    incoming().role == existing().role; // Role is immutable for self-updates
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'village', 'profileImage', 'languagePreference', 'experience', 'heritageStory', 'artisanType', 'followers']) &&
+                    incoming().role == existing().role;
                    
       allow delete: if isAdmin();
     }
 
-    // --- Products ---
+    // --- Products (Artisan inventory) ---
     match /products/{productId} {
       function isValidProduct(data) {
-        return isValidId(data.id) &&
+        return data.id == productId &&
                data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+               data.description is string && data.description.size() > 0 &&
                data.price is number && data.price >= 0 &&
-               data.artisanId == request.auth.uid;
+               data.artisanId is string && data.artisanId.size() > 0 &&
+               data.status in ['draft', 'active', 'sold_out', 'archived'];
       }
 
-      allow read: if true; // Catalog is public
+      allow read: if true; // Product catalog is public
 
-      allow create: if isArtisan() && isValidProduct(incoming());
+      allow create: if isArtisan() && isValidProduct(incoming()) && 
+                    incoming().artisanId == request.auth.uid;
       
-      allow update: if (isOwner(existing().artisanId) && isValidProduct(incoming()) && 
-                        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'benefit', 'category', 'imageUrl', 'price', 'size', 'usageInstructions', 'availability', 'ecoScore', 'plasticReduced'])) ||
-                    isAdmin();
+      allow update: if isArtisanOwner(existing().artisanId) && 
+                    isValidProduct(incoming()) && 
+                    incoming().artisanId == existing().artisanId;
 
-      allow delete: if isOwner(existing().artisanId) || isAdmin();
+      allow delete: if isArtisanOwner(existing().artisanId) || isAdmin();
+    }
+
+    // --- Materials (Supply inventory) ---
+    match /materials/{materialId} {
+      function isValidMaterial(data) {
+        return data.id == materialId &&
+               data.name is string && data.name.size() > 0 &&
+               data.artisanId is string &&
+               data.currentStock is number && data.currentStock >= 0 &&
+               data.costPerUnit is number && data.costPerUnit >= 0 &&
+               data.lowStockThreshold is number;
+      }
+
+      allow read: if isArtisanOwner(resource.data.artisanId);
+      allow list: if false;
+
+      allow create: if isArtisan() && isValidMaterial(incoming()) && 
+                    incoming().artisanId == request.auth.uid;
+      
+      allow update: if isArtisanOwner(existing().artisanId) && 
+                    isValidMaterial(incoming()) && 
+                    incoming().artisanId == existing().artisanId;
+
+      allow delete: if isArtisanOwner(existing().artisanId) || isAdmin();
+    }
+
+    // --- Orders ---
+    match /orders/{orderId} {
+      function isValidOrder(data) {
+        return data.id == orderId &&
+               data.customerId is string &&
+               data.artisanId is string &&
+               data.totalPrice is number && data.totalPrice >= 0 &&
+               data.status in ['pending', 'accepted', 'processing', 'shipped', 'delivered', 'cancelled', 'rejected'];
+      }
+
+      // Customers can read their own orders
+      allow read: if isOwner(resource.data.customerId);
+
+      // Artisans can read orders for their products
+      allow read: if isArtisanOwner(resource.data.artisanId);
+
+      // Customers can create orders (custom order requests)
+      allow create: if isSignedIn() && 
+                    incoming().customerId == request.auth.uid &&
+                    isValidOrder(incoming());
+      
+      // Artisans can update their own orders
+      allow update: if isArtisanOwner(existing().artisanId) && 
+                    isValidOrder(incoming()) && 
+                    incoming().artisanId == existing().artisanId &&
+                    incoming().customerId == existing().customerId;
+
+      allow delete: if isAdmin();
+    }
+
+    // --- Custom Requests ---
+    match /customRequests/{requestId} {
+      function isValidRequest(data) {
+        return data.id == requestId &&
+               data.customerId is string &&
+               data.artisanId is string &&
+               data.description is string && data.description.size() > 0 &&
+               data.status in ['pending', 'rejected', 'counter_offered', 'accepted', 'completed'];
+      }
+
+      // Customers can read their own requests
+      allow read: if isOwner(resource.data.customerId);
+
+      // Artisans can read requests sent to them
+      allow read: if isArtisanOwner(resource.data.artisanId);
+
+      // Customers can create requests
+      allow create: if isSignedIn() && 
+                    incoming().customerId == request.auth.uid &&
+                    isValidRequest(incoming());
+      
+      // Artisans can update requests (add counter offers, change status)
+      allow update: if isArtisanOwner(existing().artisanId) && 
+                    isValidRequest(incoming()) && 
+                    incoming().artisanId == existing().artisanId;
+
+      // Customers can update to accept counter offers
+      allow update: if isOwner(existing().customerId) && 
+                    incoming().status == 'accepted' &&
+                    existing().status == 'counter_offered';
+
+      allow delete: if isAdmin();
+    }
+
+    // --- Workshops ---
+    match /workshops/{workshopId} {
+      function isValidWorkshop(data) {
+        return data.id == workshopId &&
+               data.artisanId is string &&
+               data.title is string && data.title.size() > 0 &&
+               data.date is timestamp &&
+               data.startTime is string &&
+               data.endTime is string &&
+               data.type in ['workshop', 'custom_order', 'personal'] &&
+               data.status in ['scheduled', 'completed', 'cancelled'];
+      }
+
+      allow read: if true; // Workshops are public for discovery
+
+      allow create: if isArtisan() && 
+                    isValidWorkshop(incoming()) && 
+                    incoming().artisanId == request.auth.uid;
+      
+      allow update: if isArtisanOwner(existing().artisanId) && 
+                    isValidWorkshop(incoming()) && 
+                    incoming().artisanId == existing().artisanId;
+
+      // Students can update their enrollment
+      allow update: if isSignedIn() &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['enrolledStudents', 'enrolled']);
+
+      allow delete: if isArtisanOwner(existing().artisanId) || isAdmin();
+    }
+
+    // --- Analytics (read-only for artisans) ---
+    match /analytics/{analyticsId} {
+      allow read: if isArtisanOwner(resource.data.artisanId);
+      allow write: if false; // Server-side only
+    }
+
+    // --- Favorites ---
+    match /users/{userId}/favorites/{favoriteId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
   }
 }

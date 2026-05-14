@@ -21,7 +21,7 @@ import {
   Plus,
   Heart,
   Palette,
-  Sparkles,
+  
   Languages,
   MessageSquare,
   Send,
@@ -36,7 +36,8 @@ import {
   ShoppingCart,
   BarChart3
 } from 'lucide-react';
-import { UI_STRINGS } from '../constants/products';
+import { UI_STRINGS, PRODUCTS } from '../constants/products';
+import { useToast } from './ToastProvider';
 import { Artisan, Product, Language, TemplateType, ArtisanProduct, Order } from '../types';
 import { BenefitCardEngine } from '../lib/canvas-engine';
 import { shareToWhatsApp } from '../lib/sharing-utility';
@@ -56,7 +57,7 @@ import ProductModal from './ProductModal';
 export default function GalleryScreen() {
   const { user, profile, isArtisan } = useAuth();
   
-  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [dbProducts, setDbProducts] = useState<Product[]>(PRODUCTS);
   const [artisan, setArtisan] = useState<Artisan>({
     name: profile?.name || user?.displayName || 'Anonymous',
     phone: profile?.phone || '',
@@ -71,11 +72,15 @@ export default function GalleryScreen() {
     // Sync with Firestore Products
     const q = query(collection(db, 'products'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const prods: Product[] = [];
-      snapshot.forEach((doc) => {
-        prods.push(doc.data() as Product);
-      });
-      setDbProducts(prods);
+      if (!snapshot.empty) {
+        const prods: Product[] = [];
+        snapshot.forEach((doc) => {
+          prods.push({ id: doc.id, ...doc.data() } as Product);
+        });
+        setDbProducts(prods);
+      } else {
+        setDbProducts(PRODUCTS);
+      }
     });
 
     return () => unsubscribe();
@@ -129,6 +134,8 @@ export default function GalleryScreen() {
       });
       if (profile.languagePreference) setLanguage(profile.languagePreference as Language);
       if (profile.favorites) setFavorites(new Set(profile.favorites));
+      // Reset profile message after sync
+      setProfileMessage(null);
     }
   }, [profile]);
 
@@ -177,6 +184,7 @@ export default function GalleryScreen() {
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const engine = useRef(new BenefitCardEngine());
+  const toast = useToast();
 
   const filteredProducts = useMemo(() => {
     return dbProducts.filter(p => {
@@ -205,7 +213,8 @@ export default function GalleryScreen() {
 
   const handleAddProduct = useCallback(() => {
     setEditingProduct(null);
-    setIsProductModalOpen(true);
+    setShowProductForm(true);
+    setArtisanScreenMode('add-product');
   }, []);
 
   const toggleFavorite = useCallback(async (id: string, e: React.MouseEvent) => {
@@ -433,7 +442,7 @@ export default function GalleryScreen() {
               className="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-earth-primary text-white rounded-full hover:bg-earth-dark transition-all shadow-md hover:shadow-lg active:scale-95"
               title="Open Story Generator"
             >
-              <Sparkles size={16} />
+              <img src="/assets/logo.png" alt="Logo" className="w-4 h-4 object-contain" />
               <span className="text-sm font-bold">Lab</span>
             </button>
             
@@ -630,13 +639,13 @@ export default function GalleryScreen() {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-earth-dark/25 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-earth-dark/20 to-transparent pointer-events-none" />
                 <div className="absolute top-2 left-2 flex flex-col gap-2">
                   <div className="bg-white/90 backdrop-blur-md text-earth-dark text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
                     {t[product.category] || product.category}
                   </div>
-                  <div className="bg-black/55 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-[0.18em] px-3 py-1.5 rounded-full shadow-sm">
+                  <div className="bg-earth-primary/80 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-[0.18em] px-3 py-1.5 rounded-full shadow-sm">
                     Eco {product.ecoScore}
                   </div>
                 </div>
@@ -1003,7 +1012,7 @@ export default function GalleryScreen() {
           className="fixed bottom-6 right-6 w-14 h-14 bg-earth-dark text-white rounded-full flex items-center justify-center shadow-lg shadow-earth-primary/30 hover:bg-earth-primary transition-all active:scale-90 z-40 group"
         >
           <div className="relative">
-            <Sparkles size={24} strokeWidth={2.5} />
+            <img src="/assets/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
             <div className="absolute -top-12 right-0 bg-earth-dark text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
               Add New Product
             </div>
@@ -1060,6 +1069,7 @@ export default function GalleryScreen() {
                   <div className="mb-6 sm:mb-8">
                     <h2 className="text-2xl sm:text-3xl font-black text-earth-dark">{t.artisanProfile}</h2>
                     <p className="text-earth-dark/40 text-xs sm:text-sm mt-1">Edit your branding and contact information</p>
+                    {!isArtisan && <p className="text-red-600 text-xs mt-2 font-bold">⚠️ Not registered as artisan. Contact support if this is incorrect.</p>}
                   </div>
 
                   {/* Form Fields */}
@@ -1124,16 +1134,22 @@ export default function GalleryScreen() {
                         </>
                       )}
                     </button>
-                    {isArtisan && (
-                      <button
-                        type="button"
-                        onClick={() => setShowStoryGenerator(true)}
-                        className="w-full py-3 sm:py-4 rounded-2xl sm:rounded-[24px] font-black text-base sm:text-lg text-earth-dark bg-earth-light/50 border border-earth-dark/10 hover:border-earth-primary hover:bg-earth-primary hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2"
-                      >
-                        <Plus size={20} />
-                        Add Product
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        if (!isArtisan) {
+                          toast.push('info', 'Switch to an Artisan account to add products');
+                          return;
+                        }
+                        setShowProductForm(true);
+                        setArtisanScreenMode('add-product');
+                      }}
+                      className="w-full py-3 sm:py-4 rounded-2xl sm:rounded-[24px] font-black text-base sm:text-lg text-earth-dark bg-earth-light/50 border border-earth-dark/10 hover:border-earth-primary hover:bg-earth-primary hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <Plus size={20} />
+                      Add Product
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
