@@ -31,15 +31,25 @@ fun NavGraph(
         startDestination = startDestination
     ) {
         composable("login") {
-            LoginScreen(
+            com.kumbar.karn.ui.auth.LoginScreen(
                 viewModel = authViewModel,
-                onRegisterClick = { navController.navigate("register") }
+                onRegisterClick = { navController.navigate("register") },
+                onLoginSuccess = {
+                    navController.navigate("gallery") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
             )
         }
         composable("register") {
-            RegisterScreen(
+            com.kumbar.karn.ui.auth.RegisterScreen(
                 viewModel = authViewModel,
-                onLoginClick = { navController.navigate("login") }
+                onLoginClick = { navController.navigate("login") },
+                onLoginSuccess = {
+                    navController.navigate("gallery") {
+                        popUpTo("register") { inclusive = true }
+                    }
+                }
             )
         }
         composable("gallery") {
@@ -88,14 +98,31 @@ fun NavGraph(
             )
         }
         composable("profile") {
-            ProfileScreen(
+            com.kumbar.karn.ui.profile.ProfileScreen(
                 authViewModel = authViewModel,
                 onBack = { navController.popBackStack() },
                 onLogoutSuccess = {
                     navController.navigate("login") {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onNavigateToMyProducts = {
+                    navController.navigate("myProducts")
+                },
+                onNavigateToSettings = {
+                    navController.navigate("accountSettings")
                 }
+            )
+        }
+        composable("myProducts") {
+            com.kumbar.karn.ui.profile.MyProductsScreen(
+                authViewModel = authViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("accountSettings") {
+            com.kumbar.karn.ui.profile.AccountSettingsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
     }

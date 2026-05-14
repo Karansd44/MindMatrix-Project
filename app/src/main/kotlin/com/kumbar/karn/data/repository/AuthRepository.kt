@@ -7,5 +7,6 @@ interface AuthRepository {
     val currentUser: Flow<User?>
     suspend fun login(email: String, pass: String): Result<User>
     suspend fun register(user: User, pass: String): Result<User>
+    suspend fun googleLogin(idToken: String): Result<User>
     suspend fun logout()
 }

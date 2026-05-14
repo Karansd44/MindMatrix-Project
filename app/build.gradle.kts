@@ -122,6 +122,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.android.gms:play-services-auth:21.1.1")
 
     // ── Google AI / Gemini ────────────────────────────────────────────────────
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")

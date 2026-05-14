@@ -58,6 +58,34 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun googleLogin(idToken: String): Result<User> {
+        return try {
+            val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            val uid = result.user?.uid ?: throw Exception("Google Login failed")
+            
+            val docRef = firestore.collection("users").document(uid)
+            val doc = docRef.get().await()
+            
+            if (doc.exists()) {
+                val user = doc.toObject(User::class.java) ?: throw Exception("User data not found")
+                Result.success(user)
+            } else {
+                // Create a new user record for first-time Google sign-in
+                val newUser = User(
+                    userId = uid,
+                    name = result.user?.displayName ?: "Google User",
+                    email = result.user?.email ?: "",
+                    role = "customer" // Default role
+                )
+                docRef.set(newUser).await()
+                Result.success(newUser)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun logout() {
         auth.signOut()
     }

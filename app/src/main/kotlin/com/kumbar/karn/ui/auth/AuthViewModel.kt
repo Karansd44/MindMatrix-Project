@@ -47,6 +47,16 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun loginWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            _loading.value = true
+            _error.value = null
+            repository.googleLogin(idToken)
+                .onFailure { _error.value = it.message }
+            _loading.value = false
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             repository.logout()

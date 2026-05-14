@@ -27,7 +27,9 @@ import com.kumbar.karn.ui.auth.AuthViewModel
 fun ProfileScreen(
     authViewModel: AuthViewModel,
     onBack: () -> Unit,
-    onLogoutSuccess: () -> Unit
+    onLogoutSuccess: () -> Unit,
+    onNavigateToMyProducts: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
 
@@ -127,7 +129,7 @@ fun ProfileScreen(
             ProfileMenuItem(
                 icon = Icons.Default.ShoppingBag,
                 title = if (currentUser?.role == "artisan") "My Products" else "My Orders",
-                onClick = { /* TODO */ }
+                onClick = onNavigateToMyProducts
             )
             ProfileMenuItem(
                 icon = Icons.Default.Favorite,
@@ -137,7 +139,7 @@ fun ProfileScreen(
             ProfileMenuItem(
                 icon = Icons.Default.Settings,
                 title = "Account Settings",
-                onClick = { /* TODO */ }
+                onClick = onNavigateToSettings
             )
 
             Spacer(modifier = Modifier.weight(1f))

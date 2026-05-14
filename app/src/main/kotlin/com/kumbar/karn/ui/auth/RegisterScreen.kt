@@ -21,7 +21,8 @@ import com.kumbar.karn.data.model.User
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit,
+    onLoginSuccess: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -31,6 +32,13 @@ fun RegisterScreen(
     
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
+
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            onLoginSuccess()
+        }
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.background,

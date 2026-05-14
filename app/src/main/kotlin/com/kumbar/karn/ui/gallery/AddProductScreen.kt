@@ -13,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,13 +22,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.kumbar.karn.ui.auth.AuthViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +41,7 @@ fun AddProductScreen(
     onBack: () -> Unit,
     onSuccess: () -> Unit
 ) {
+    val context = LocalContext.current
     val currentUser by authViewModel.currentUser.collectAsState()
     
     var name by remember { mutableStateOf("") }
@@ -43,6 +49,8 @@ fun AddProductScreen(
     var price by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Cooking") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
     
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -51,13 +59,63 @@ fun AddProductScreen(
     // Photo picker launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> selectedImageUri = uri }
+        onResult = { uri -> 
+            if (uri != null) selectedImageUri = uri 
+        }
     )
+
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                selectedImageUri = tempCameraUri
+            }
+        }
+    )
+
+    fun createTempImageUri(): Uri {
+        val imagesDir = File(context.cacheDir, "images")
+        imagesDir.mkdirs()
+        val file = File(imagesDir, "temp_camera_image_.jpg")
+        return FileProvider.getUriForFile(context, ".fileprovider", file)
+    }
 
     LaunchedEffect(uploadSuccess) {
         if (uploadSuccess) {
             onSuccess()
         }
+    }
+
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { Text("Add Photo", style = MaterialTheme.typography.titleLarge) },
+            text = { Text("Choose a method to add a photo of your product.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showImageSourceDialog = false
+                    tempCameraUri = createTempImageUri()
+                    tempCameraUri?.let { cameraLauncher.launch(it) }
+                }) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Camera")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showImageSourceDialog = false
+                    photoPickerLauncher.launch(
+                        androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }) {
+                    Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Gallery")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -99,11 +157,7 @@ fun AddProductScreen(
                     .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surface)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
-                    .clickable { 
-                        photoPickerLauncher.launch(
-                            androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
+                    .clickable { showImageSourceDialog = true },
                 contentAlignment = Alignment.Center
             ) {
                 if (selectedImageUri != null) {
@@ -152,7 +206,7 @@ fun AddProductScreen(
             OutlinedTextField(
                 value = price,
                 onValueChange = { price = it },
-                label = { Text("Price (₹)", style = MaterialTheme.typography.bodyMedium) },
+                label = { Text("Price (?)", style = MaterialTheme.typography.bodyMedium) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.small,
