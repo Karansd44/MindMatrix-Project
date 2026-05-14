@@ -1,160 +1,157 @@
 package com.kumbar.karn.ui.gallery
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kumbar.karn.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    onBack: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: ChatViewModel = hiltViewModel(),
+    onBack: () -> Unit
 ) {
     val messages by viewModel.messages.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
     var inputText by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
-        }
-    }
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { 
                     Text(
-                        "AI Helper",
-                        style = MaterialTheme.typography.titleLarge,
+                        "ARTISAN DIALOGUE",
+                        style = MaterialTheme.typography.labelMedium,
+                        letterSpacing = 2.sp,
                         color = MaterialTheme.colorScheme.primary
                     ) 
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ChevronLeft, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(messages) { message ->
-                    MessageBubble(message)
-                }
-                if (isLoading) {
-                    item {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .padding(8.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                }
-            }
-
+        },
+        bottomBar = {
             Surface(
-                tonalElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.padding(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.small,
+                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(12.dp)
-                        .navigationBarsPadding()
-                        .imePadding(),
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = inputText,
                         onValueChange = { inputText = it },
+                        placeholder = { 
+                            Text(
+                                "Inquire about heritage...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                            ) 
+                        },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ask about pottery benefits...") },
-                        shape = RoundedCornerShape(24.dp),
-                        maxLines = 3,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = PaperSurface,
-                            focusedContainerColor   = PaperSurface,
-                            unfocusedBorderColor    = Color.Transparent,
-                            focusedBorderColor      = ForestGreen,
-                            cursorColor             = ForestGreen
-                        )
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        maxLines = 4
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(
+                    
+                    IconButton(
                         onClick = {
                             if (inputText.isNotBlank()) {
                                 viewModel.sendMessage(inputText)
                                 inputText = ""
                             }
                         },
-                        modifier = Modifier.size(48.dp),
-                        containerColor = ForestGreen,
-                        contentColor = PureWhite,
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+                        enabled = !isLoading && inputText.isNotBlank()
                     ) {
-                        Icon(Icons.Default.Send, contentDescription = "Send")
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
+                        } else {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = if (inputText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            )
+                        }
                     }
                 }
+            }
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            reverseLayout = true
+        ) {
+            items(messages.asReversed()) { message ->
+                HeritageMessageItem(message)
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
 }
 
 @Composable
-fun MessageBubble(message: Message) {
-    val alignment = if (message.isUser) Alignment.End else Alignment.Start
-    val color = if (message.isUser) ForestGreen else TerracottaPastel
-    val textColor = if (message.isUser) PureWhite else InkDark
-    val shape = if (message.isUser) {
-        RoundedCornerShape(16.dp, 16.dp, 4.dp, 16.dp)
-    } else {
-        RoundedCornerShape(16.dp, 16.dp, 16.dp, 4.dp)
-    }
-
+fun HeritageMessageItem(message: Message) {
+    val isUser = message.isUser
+    
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = alignment
+        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
         Surface(
-            color = color,
-            shape = shape,
-            tonalElevation = 1.dp
+            color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.small,
+            border = if (isUser) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
         ) {
             Text(
                 text = message.text,
-                modifier = Modifier.padding(12.dp),
-                color = textColor,
-                style = MaterialTheme.typography.bodyLarge
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
             )
         }
+        
+        Spacer(modifier = Modifier.height(6.dp))
+        
+        Text(
+            text = if (isUser) "COLLECTOR" else "ARCHIVIST",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            fontSize = 9.sp,
+            letterSpacing = 2.sp
+        )
     }
 }

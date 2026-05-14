@@ -16,12 +16,12 @@ plugins {
 
 android {
     namespace  = "com.kumbar.karn"
-    compileSdk = 35
+    compileSdk = 34   // keep at 34 – Compose 1.5.x does not support SDK 35
 
     defaultConfig {
         applicationId = "com.kumbar.karn"
         minSdk        = 24
-        targetSdk     = 35
+        targetSdk     = 34
         versionCode   = 1
         versionName   = "1.0.0"
 
@@ -30,21 +30,24 @@ android {
             useSupportLibrary = true
         }
 
-        // ── BuildConfig constants available everywhere in the app ──────────
-        buildConfigField("String", "FIREBASE_PROJECT_ID",   "\"kumbarakala-e07de\"")
-        buildConfigField("String", "FIREBASE_STORAGE_BUCKET","\"kumbarakala-e07de.firebasestorage.app\"")
-        buildConfigField("String", "DEFAULT_LANGUAGE",       "\"en\"")
-        buildConfigField("int",    "STORY_CARD_WIDTH",        "1080")
-        buildConfigField("int",    "STORY_CARD_HEIGHT",       "1350")
+        // ── BuildConfig constants ─────────────────────────────────────────────
+        buildConfigField("String",  "FIREBASE_PROJECT_ID",    "\"kumbarakala-e07de\"")
+        buildConfigField("String",  "FIREBASE_STORAGE_BUCKET","\"kumbarakala-e07de.firebasestorage.app\"")
+        buildConfigField("String",  "DEFAULT_LANGUAGE",       "\"en\"")
+        buildConfigField("int",     "STORY_CARD_WIDTH",       "1080")   // lowercase = Java primitive
+        buildConfigField("int",     "STORY_CARD_HEIGHT",      "1350")
     }
 
-    signingConfigs {
-        // Debug uses the default Android keystore – no setup needed.
-        // Release: put these four keys in local.properties (never in git).
-        create("release") {
-            val path = localProps["RELEASE_STORE_FILE"] as? String
-            if (!path.isNullOrEmpty()) {
-                storeFile = file(path)
+    // ── Signing ───────────────────────────────────────────────────────────────
+    // Release signing is OPTIONAL during development.
+    // Fill in RELEASE_* keys in local.properties before building a signed APK.
+    val releaseStorePath = localProps["RELEASE_STORE_FILE"] as? String
+    val hasReleaseSigning = !releaseStorePath.isNullOrEmpty()
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile     = file(releaseStorePath!!)
                 storePassword = localProps["RELEASE_STORE_PASSWORD"] as? String
                 keyAlias      = localProps["RELEASE_KEY_ALIAS"]     as? String
                 keyPassword   = localProps["RELEASE_KEY_PASSWORD"]  as? String
@@ -54,27 +57,30 @@ android {
 
     buildTypes {
         debug {
-            isDebuggable        = true
-            isMinifyEnabled     = false
+            isDebuggable    = true
+            isMinifyEnabled = false
 
-            // Pull Gemini key from local.properties; fall back to empty string
-            val geminiDebugKey = localProps["GEMINI_API_KEY_DEBUG"] as? String ?: ""
-            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiDebugKey\"")
-            buildConfigField("Boolean", "IS_DEBUG", "true")
+            val key = localProps["GEMINI_API_KEY_DEBUG"] as? String ?: ""
+            buildConfigField("String",  "GEMINI_API_KEY", "\"$key\"")
+            buildConfigField("boolean", "IS_DEBUG",       "true")   // FIX: lowercase boolean
         }
         release {
-            isDebuggable    = false
-            isMinifyEnabled = true
+            isDebuggable      = false
+            isMinifyEnabled   = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
 
-            val geminiReleaseKey = localProps["GEMINI_API_KEY_RELEASE"] as? String ?: ""
-            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiReleaseKey\"")
-            buildConfigField("Boolean", "IS_DEBUG", "false")
+            // Only attach signing config when keys are provided
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+
+            val key = localProps["GEMINI_API_KEY_RELEASE"] as? String ?: ""
+            buildConfigField("String",  "GEMINI_API_KEY", "\"$key\"")
+            buildConfigField("boolean", "IS_DEBUG",       "false")  // FIX: lowercase boolean
         }
     }
 

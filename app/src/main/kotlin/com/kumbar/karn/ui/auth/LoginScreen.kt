@@ -1,29 +1,18 @@
 package com.kumbar.karn.ui.auth
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kumbar.karn.ui.theme.ForestGreen
-import com.kumbar.karn.ui.theme.Terracotta
-import com.kumbar.karn.ui.theme.WhatsAppGreen
-import com.kumbar.karn.ui.theme.PureWhite
-import com.kumbar.karn.ui.theme.WarmOffWhite
-import com.kumbar.karn.ui.theme.InkMedium
-import com.kumbar.karn.ui.theme.DividerColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,253 +26,162 @@ fun LoginScreen(
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Warm earthy gradient background
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF0EDE6),   // warm off-white top
-                        Color(0xFFE8E2D9)    // slightly deeper parchment bottom
-                    )
-                )
-            )
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 28.dp, vertical = 48.dp),
+                .padding(horizontal = 32.dp, vertical = 64.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
             Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = "KUMBARA-KALA",
+                style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 6.sp,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = "THE MODERN HERITAGE",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                letterSpacing = 4.sp
+            )
+            
+            Spacer(modifier = Modifier.height(80.dp))
+            
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email Address", style = MaterialTheme.typography.bodyMedium) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = Color.Transparent,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary
+                ),
+                singleLine = true
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password", style = MaterialTheme.typography.bodyMedium) },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = Color.Transparent,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary
+                ),
+                singleLine = true
+            )
 
-            // ── Brand Header ──────────────────────────────────────────────
-            // Leaf / eco icon placeholder circle
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(36.dp),
-                        ambientColor = ForestGreen.copy(alpha = 0.25f),
-                        spotColor = ForestGreen.copy(alpha = 0.4f)
-                    )
-                    .background(ForestGreen, RoundedCornerShape(36.dp)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
+                TextButton(
+                    onClick = onForgotPasswordClick,
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    Text(
+                        "Forgot password?",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                    )
+                }
+            }
+            
+            if (error != null) {
                 Text(
-                    text = "🏺",
-                    fontSize = 32.sp
+                    text = error!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(vertical = 12.dp)
                 )
+            }
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            Button(
+                onClick = { viewModel.login(email, password) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = !loading,
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        "SIGN IN",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 3.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
+                        )
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "Kumbara-Kala",
-                style = MaterialTheme.typography.headlineLarge,
-                color = ForestGreen,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "Handmade with love · Eco-friendly",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Terracotta,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // ── Paper Card ────────────────────────────────────────────────
-            Surface(
+            OutlinedButton(
+                onClick = { /* TODO: Google Login */ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = 12.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        ambientColor = Color(0xFF000000).copy(alpha = 0.08f),
-                        spotColor   = Color(0xFF000000).copy(alpha = 0.12f)
-                    ),
-                shape = RoundedCornerShape(24.dp),
-                color = PureWhite
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Welcome back",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = ForestGreen
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Sign in to continue your artisan journey",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = InkMedium,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(28.dp))
-
-                    // Email field
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email Address") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor   = ForestGreen,
-                            unfocusedBorderColor = DividerColor,
-                            focusedLabelColor    = ForestGreen,
-                            cursorColor          = ForestGreen
-                        ),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Password field
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor   = ForestGreen,
-                            unfocusedBorderColor = DividerColor,
-                            focusedLabelColor    = ForestGreen,
-                            cursorColor          = ForestGreen
-                        ),
-                        singleLine = true
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(
-                            onClick = onForgotPasswordClick,
-                            contentPadding = PaddingValues(vertical = 4.dp)
-                        ) {
-                            Text(
-                                "Forgot password?",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Terracotta
-                            )
-                        }
-                    }
-
-                    if (error != null) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp),
-                            color = Color(0xFFFDE8E8),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = error!!,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(12.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Primary CTA – Forest Green
-                    Button(
-                        onClick = { viewModel.login(email, password) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .shadow(
-                                elevation = 6.dp,
-                                shape = RoundedCornerShape(16.dp),
-                                spotColor = ForestGreen.copy(alpha = 0.4f)
-                            ),
-                        enabled = !loading,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = ForestGreen,
-                            contentColor   = PureWhite
-                        )
-                    ) {
-                        if (loading) {
-                            CircularProgressIndicator(
-                                color = PureWhite,
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                "Sign In",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Secondary CTA – Terracotta outline
-                    OutlinedButton(
-                        onClick = { /* TODO: Google Login */ },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Terracotta.copy(alpha = 0.6f)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Terracotta
-                        )
-                    ) {
-                        Text(
-                            "Continue with Google",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // ── Register Link ─────────────────────────────────────────────
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.small,
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 0.5.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
             ) {
                 Text(
-                    "New to Kumbara-Kala? ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkMedium
+                    "SIGN IN WITH GOOGLE",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 2.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary
                 )
-                TextButton(onClick = onRegisterClick, contentPadding = PaddingValues(0.dp)) {
-                    Text(
-                        "Join the community",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = ForestGreen
-                    )
-                }
             }
+            
+            Spacer(modifier = Modifier.height(64.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+            TextButton(onClick = onRegisterClick) {
+                Text(
+                    "BEGIN YOUR LEGACY. REGISTER",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    letterSpacing = 1.sp
+                )
+            }
         }
     }
 }

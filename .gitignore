@@ -1,9 +1,45 @@
+# ── Node / Web ────────────────────────────────────────────────────────────────
 node_modules/
-build/
 dist/
 coverage/
-.DS_Store
-*.log
+npm run cap:copy
+
+# ── Android – Generated build outputs ────────────────────────────────────────
+build/
+app/build/
+**/build/
+
+# ── Gradle – Cache, wrapper downloads, lock files ────────────────────────────
+.gradle/
+**/.gradle/
+gradle/wrapper/gradle-wrapper.jar   # downloaded automatically; optional to ignore
+
+# ── Android Studio / IntelliJ IDE ─────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+local.properties                    # contains SDK path + secret keys – never commit
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ── Firebase / Google Services ────────────────────────────────────────────────
+# google-services.json contains API keys; keep it if your repo is private,
+# remove the next line if you want it ignored (recommended for public repos).
+# app/google-services.json
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
 .env*
 !.env.example
-npm run cap:copy
+*.jks
+*.keystore
+*.p12
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+firestore-debug.log
+ui-debug.log

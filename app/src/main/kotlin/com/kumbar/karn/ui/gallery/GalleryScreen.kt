@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -31,7 +30,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.kumbar.karn.data.model.Product
 import com.kumbar.karn.ui.auth.AuthViewModel
-import com.kumbar.karn.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,101 +45,65 @@ fun GalleryScreen(
     val products by productViewModel.filteredProducts.collectAsState()
     val searchQuery by productViewModel.searchQuery.collectAsState()
     val selectedCategory by productViewModel.selectedCategory.collectAsState()
-
+    
     val categories = listOf("cooking", "storage", "wellness", "decor")
 
     Scaffold(
-        containerColor = Color(0xFFF5F2EC), // warm parchment
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Column(
                 modifier = Modifier
-                    .background(Color(0xFFF5F2EC))
+                    .background(MaterialTheme.colorScheme.background)
                     .fillMaxWidth()
                     .padding(top = 24.dp)
             ) {
-                // Brand header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "Kumbara-Kala",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = ForestGreen
-                        )
-                        Text(
-                            text = "Handmade · Eco-friendly",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Terracotta
-                        )
-                    }
-                    // Eco leaf badge
-                    Surface(
-                        color = ForestGreenPastel,
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(
-                            text = "🌿 Eco",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = ForestGreen
-                        )
-                    }
-                }
+                Text(
+                    text = "CURATED COLLECTIONS",
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = 3.sp,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Warm search bar
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { productViewModel.setSearchQuery(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    placeholder = {
+                        .padding(horizontal = 24.dp),
+                    placeholder = { 
                         Text(
-                            "Search handmade pieces…",
+                            "Search the archives...",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = InkMedium.copy(alpha = 0.6f)
-                        )
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        ) 
                     },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            tint = ForestGreen.copy(alpha = 0.6f)
-                        )
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = ForestGreen,
-                        unfocusedBorderColor = DividerColor,
-                        focusedContainerColor   = PureWhite,
-                        unfocusedContainerColor = PureWhite,
-                        cursorColor = ForestGreen
+                    shape = MaterialTheme.shapes.small,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        containerColor = Color.Transparent,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
                     ),
                     singleLine = true
                 )
 
-                // Category chips
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
-                        EcoCategoryChip(
+                        HeritageCategoryChip(
                             selected = selectedCategory == null,
-                            label = "All",
+                            label = "All Works",
                             onClick = { productViewModel.setCategory(null) }
                         )
                     }
                     items(categories) { category ->
-                        EcoCategoryChip(
+                        HeritageCategoryChip(
                             selected = selectedCategory == category,
                             label = category.replaceFirstChar { it.uppercase() },
                             onClick = { productViewModel.setCategory(category) }
@@ -151,72 +113,62 @@ fun GalleryScreen(
             }
         },
         bottomBar = {
-            Surface(
-                shadowElevation = 8.dp,
-                color = PureWhite
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.background,
+                tonalElevation = 0.dp,
+                modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             ) {
-                NavigationBar(
-                    containerColor = PureWhite,
-                    tonalElevation = 0.dp
-                ) {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                        label = { Text("Home", style = MaterialTheme.typography.labelSmall) },
-                        selected = true,
-                        onClick = { },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor   = ForestGreen,
-                            unselectedIconColor = InkLight,
-                            indicatorColor      = ForestGreenPastel
-                        )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    selected = true,
+                    onClick = { /* Already here */ },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        indicatorColor = Color.Transparent
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Favourites") },
-                        label = { Text("Saved", style = MaterialTheme.typography.labelSmall) },
-                        selected = false,
-                        onClick = onNavigateToFavorites,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor   = ForestGreen,
-                            unselectedIconColor = InkLight,
-                            indicatorColor      = ForestGreenPastel
-                        )
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Favorites") },
+                    selected = false,
+                    onClick = onNavigateToFavorites,
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        indicatorColor = Color.Transparent
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "AI Helper") },
-                        label = { Text("AI", style = MaterialTheme.typography.labelSmall) },
-                        selected = false,
-                        onClick = onNavigateToAI,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor   = ForestGreen,
-                            unselectedIconColor = InkLight,
-                            indicatorColor      = ForestGreenPastel
-                        )
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "AI Helper") },
+                    selected = false,
+                    onClick = onNavigateToAI,
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        indicatorColor = Color.Transparent
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                        label = { Text("Profile", style = MaterialTheme.typography.labelSmall) },
-                        selected = false,
-                        onClick = onNavigateToProfile,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor   = ForestGreen,
-                            unselectedIconColor = InkLight,
-                            indicatorColor      = ForestGreenPastel
-                        )
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                    selected = false,
+                    onClick = onNavigateToProfile,
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        indicatorColor = Color.Transparent
                     )
-                }
+                )
             }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = onCreateStoryClick,
-                containerColor = WhatsAppGreen,   // WhatsApp Green for share/story action
-                contentColor   = PureWhite,
-                shape          = RoundedCornerShape(20.dp),
-                elevation      = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp)
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+                shape = MaterialTheme.shapes.small,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)
             ) {
-                Icon(Icons.Default.Share, contentDescription = "Share Story", modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Share Story", style = MaterialTheme.typography.labelLarge)
+                Icon(Icons.Default.AutoAwesome, contentDescription = "Create Story", modifier = Modifier.size(24.dp))
             }
         }
     ) { padding ->
@@ -228,19 +180,11 @@ fun GalleryScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🏺", fontSize = 48.sp)
-                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "No handmade pieces found",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = InkMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        "Try a different category",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = InkLight,
-                        textAlign = TextAlign.Center
+                        "THE ARCHIVES ARE EMPTY",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                        letterSpacing = 2.sp
                     )
                 }
             }
@@ -248,17 +192,17 @@ fun GalleryScreen(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end   = 16.dp,
-                    top   = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 88.dp
+                    start = 24.dp,
+                    end = 24.dp,
+                    top = padding.calculateTopPadding(),
+                    bottom = padding.calculateBottomPadding() + 80.dp
                 ),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement   = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(products) { product ->
-                    ArtisanProductCard(
+                    HeritageProductCard(
                         product = product,
                         onClick = { onProductClick(product) }
                     )
@@ -268,136 +212,91 @@ fun GalleryScreen(
     }
 }
 
-// ─── Eco Category Chip ────────────────────────────────────────────────────────
 @Composable
-fun EcoCategoryChip(
+fun HeritageCategoryChip(
     selected: Boolean,
     label: String,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.clickable { onClick() },
-        color   = if (selected) ForestGreen else PureWhite,
-        shape   = RoundedCornerShape(20.dp),
-        shadowElevation = if (selected) 4.dp else 1.dp,
-        border  = if (selected) null
-                  else androidx.compose.foundation.BorderStroke(1.dp, DividerColor)
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        shape = MaterialTheme.shapes.small,
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
     ) {
         Text(
-            text = label,
+            text = label.uppercase(),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelMedium,
-            color = if (selected) PureWhite else InkMedium
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+            letterSpacing = 1.sp
         )
     }
 }
 
-// ─── Artisan Product Card ("sitting on a table") ──────────────────────────────
 @Composable
-fun ArtisanProductCard(
+fun HeritageProductCard(
     product: Product,
     onClick: () -> Unit
 ) {
-    Surface(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation   = 8.dp,
-                shape       = RoundedCornerShape(20.dp),
-                ambientColor = Color.Black.copy(alpha = 0.06f),
-                spotColor   = Color.Black.copy(alpha = 0.10f)
-            )
-            .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        color = PureWhite
+            .clickable { onClick() }
     ) {
-        Column {
-            // Product image
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.9f)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .background(Color(0xFFF0EBE5))
-            ) {
-                AsyncImage(
-                    model = product.imageUrl,
-                    contentDescription = product.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-
-                // Eco-Score badge (Forest Green instead of gold)
-                if (product.ecoScore > 0) {
-                    Surface(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .align(Alignment.TopStart),
-                        color = ForestGreen,
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(
-                            text = "🌿 Eco ${product.ecoScore}",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = PureWhite
-                        )
-                    }
-                }
-
-                // WhatsApp share quick-action
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.85f)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+        ) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = product.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            
+            if (product.ecoScore > 0) {
                 Surface(
                     modifier = Modifier
                         .padding(8.dp)
-                        .align(Alignment.TopEnd)
-                        .size(32.dp),
-                    color = WhatsAppGreen.copy(alpha = 0.9f),
-                    shape = CircleShape
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Share,
-                            contentDescription = "Share on WhatsApp",
-                            tint = PureWhite,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-
-            // Product info
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = product.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = ForestGreen
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = "₹${product.price.toInt()}",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Terracotta
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Artisan tag (terracotta chip)
-                Surface(
-                    color = TerracottaPastel,
-                    shape = RoundedCornerShape(8.dp)
+                        .align(Alignment.TopEnd),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    shape = RoundedCornerShape(2.dp)
                 ) {
                     Text(
-                        text = "Handmade",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Terracotta
+                        text = "PREMIUM ${product.ecoScore}",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        letterSpacing = 1.sp
                     )
                 }
             }
         }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = product.name,
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.primary
+        )
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Text(
+            text = "₹${product.price.toInt()}",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
+            color = MaterialTheme.colorScheme.secondary
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)))
     }
 }
