@@ -1,9 +1,0 @@
-{
-  "appId": "com.kumbarakala",
-  "appName": "Kumbara-Kala",
-  "webDir": "dist",
-  "bundledWebRuntime": false,
-  "server": {
-    "androidScheme": "https"
-  }
-}

@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Kumbara-Kala</string>
-    <string name="title_activity_main">Kumbara-Kala</string>
-    <string name="package_name">com.kumbarakala</string>
-    <string name="custom_url_scheme">com.kumbarakala</string>
-</resources>

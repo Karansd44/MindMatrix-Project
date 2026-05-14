@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "89867979259",
+    "project_id": "kumbarakala-e07de",
+    "storage_bucket": "kumbarakala-e07de.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89867979259:android:4f3cb6145a726e392ca35e",
+        "android_client_info": {
+          "package_name": "com.kumbar.karn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBO2BKra9c7kUPeS6GHzqDHBuP_ijwFDKw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
