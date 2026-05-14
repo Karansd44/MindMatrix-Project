@@ -1,43 +1,31 @@
 package com.kumbar.karn.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val DarkColorScheme = darkColorScheme(
-    primary = HeritageParchment,
-    secondary = HeritageSienna,
-    tertiary = HeritageGold,
-    background = HeritageMidnight,
-    surface = Color(0xFF1A252F),
-    onPrimary = HeritageMidnight,
-    onSecondary = HeritageWhite,
-    onTertiary = HeritageMidnight,
-    onBackground = HeritageParchment,
-    onSurface = HeritageParchment,
+// Using the same Light and Dark scheme to enforce the "clean white and brown" look
+// across the entire app regardless of device settings.
+private val AppColorScheme = lightColorScheme(
+    primary = ThemePrimary,
+    secondary = ThemeSecondary,
+    tertiary = ThemeTertiary,
+    background = ThemeBackground,
+    surface = ThemeSurface,
+    onPrimary = ThemeOnPrimary,
+    onSecondary = ThemeOnSecondary,
+    onTertiary = ThemeOnPrimary,
+    onBackground = ThemeOnBackground,
+    onSurface = ThemeOnSurface,
+    outlineVariant = ThemeOutline,
+    error = ErrorRed
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = HeritagePrimary,
-    secondary = HeritageSecondary,
-    tertiary = HeritageAccent,
-    background = HeritageBackground,
-    surface = HeritageSurface,
-    onPrimary = HeritageOnPrimary,
-    onSecondary = HeritageOnSecondary,
-    onTertiary = HeritageMidnight,
-    onBackground = HeritageOnBackground,
-    onSurface = HeritageOnSurface,
-    outlineVariant = HeritageOutline
-)
-
-val HeritageTypography = Typography(
+val AppTypography = Typography(
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
@@ -71,32 +59,44 @@ val HeritageTypography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
     ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 1.sp
+    ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 1.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 10.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 1.sp
     )
 )
 
-val HeritageShapes = Shapes(
-    small = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+val AppShapes = Shapes(
+    small = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
 )
 
 @Composable
 fun KumbaraKalaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false, // Force light mode to maintain the clean white/brown look
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = HeritageTypography,
-        shapes = HeritageShapes,
+        colorScheme = AppColorScheme,
+        typography = AppTypography,
+        shapes = AppShapes,
         content = content
     )
 }

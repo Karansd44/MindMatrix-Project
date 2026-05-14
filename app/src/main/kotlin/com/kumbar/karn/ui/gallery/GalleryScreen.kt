@@ -1,5 +1,7 @@
 package com.kumbar.karn.ui.gallery
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,15 +23,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.kumbar.karn.data.model.Product
+import com.kumbar.karn.data.model.User
 import com.kumbar.karn.ui.auth.AuthViewModel
+import com.kumbar.karn.ui.util.BenefitCardEngine
+import com.kumbar.karn.ui.util.SharingUtility
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +50,16 @@ fun GalleryScreen(
     onCreateStoryClick: () -> Unit = {},
     onNavigateToAI: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToFavorites: () -> Unit = {}
+    onNavigateToFavorites: () -> Unit = {},
+    onNavigateToAddProduct: () -> Unit = {}
 ) {
     val products by productViewModel.filteredProducts.collectAsState()
     val searchQuery by productViewModel.searchQuery.collectAsState()
     val selectedCategory by productViewModel.selectedCategory.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
     
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val categories = listOf("cooking", "storage", "wellness", "decor")
 
     Scaffold(
@@ -58,11 +72,11 @@ fun GalleryScreen(
                     .padding(top = 24.dp)
             ) {
                 Text(
-                    text = "CURATED COLLECTIONS",
+                    text = "KUMBARA-KALA",
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 3.sp,
+                    letterSpacing = 4.sp,
                     textAlign = TextAlign.Center
                 )
                 
@@ -75,17 +89,12 @@ fun GalleryScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp),
                     placeholder = { 
-                        Text(
-                            "Search the archives...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        ) 
+                        Text("Search legacy crafts...", style = MaterialTheme.typography.bodyMedium) 
                     },
                     shape = MaterialTheme.shapes.small,
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        containerColor = Color.Transparent,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     ),
                     singleLine = true
                 )
@@ -121,72 +130,35 @@ fun GalleryScreen(
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     selected = true,
-                    onClick = { /* Already here */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                        indicatorColor = Color.Transparent
-                    )
+                    onClick = { /* Already here */ }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Favorites") },
+                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "AI") },
                     selected = false,
-                    onClick = onNavigateToFavorites,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "AI Helper") },
-                    selected = false,
-                    onClick = onNavigateToAI,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                        indicatorColor = Color.Transparent
-                    )
+                    onClick = onNavigateToAI
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     selected = false,
-                    onClick = onNavigateToProfile,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                        indicatorColor = Color.Transparent
-                    )
+                    onClick = onNavigateToProfile
                 )
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onCreateStoryClick,
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-                shape = MaterialTheme.shapes.small,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)
-            ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = "Create Story", modifier = Modifier.size(24.dp))
+            if (currentUser?.role == "artisan") {
+                FloatingActionButton(
+                    onClick = onNavigateToAddProduct,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.Default.Add, contentDescription = "Add Product")
+                }
             }
         }
     ) { padding ->
         if (products.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "THE ARCHIVES ARE EMPTY",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        letterSpacing = 2.sp
-                    )
-                }
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("THE ARCHIVES ARE EMPTY", style = MaterialTheme.typography.labelMedium)
             }
         } else {
             LazyVerticalGrid(
@@ -204,7 +176,33 @@ fun GalleryScreen(
                 items(products) { product ->
                     HeritageProductCard(
                         product = product,
-                        onClick = { onProductClick(product) }
+                        onClick = { onProductClick(product) },
+                        onShareClick = {
+                            scope.launch {
+                                // 1. Download image bitmap
+                                val loader = ImageLoader(context)
+                                val request = ImageRequest.Builder(context)
+                                    .data(product.imageUrl)
+                                    .allowHardware(false) // Required for Canvas processing
+                                    .build()
+                                
+                                val result = (loader.execute(request) as? SuccessResult)?.drawable
+                                val bitmap = (result as? BitmapDrawable)?.bitmap
+                                
+                                if (bitmap != null) {
+                                    // 2. Generate Benefit Card
+                                    val benefitCard = BenefitCardEngine.generateBenefitCard(
+                                        context = context,
+                                        product = product,
+                                        artisan = currentUser ?: User(name = "Master Artisan"),
+                                        productBitmap = bitmap
+                                    )
+                                    
+                                    // 3. Share to WhatsApp
+                                    SharingUtility.shareBenefitCard(context, benefitCard, product)
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -237,12 +235,11 @@ fun HeritageCategoryChip(
 @Composable
 fun HeritageProductCard(
     product: Product,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Box(
             modifier = Modifier
@@ -258,45 +255,48 @@ fun HeritageProductCard(
                 contentScale = ContentScale.Crop
             )
             
+            // Premium Badge
             if (product.ecoScore > 0) {
                 Surface(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.TopEnd),
+                    modifier = Modifier.padding(8.dp).align(Alignment.TopEnd),
                     color = MaterialTheme.colorScheme.tertiary,
                     shape = RoundedCornerShape(2.dp)
                 ) {
                     Text(
-                        text = "PREMIUM ${product.ecoScore}",
+                        text = "HEALTH ${product.ecoScore}",
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelMedium.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        letterSpacing = 1.sp
+                        color = Color.White
                     )
                 }
             }
+
+            // Share Button
+            IconButton(
+                onClick = onShareClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                    .size(32.dp)
+            ) {
+                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(16.dp))
+            }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
         Text(
             text = product.name,
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.primary
+            overflow = TextOverflow.Ellipsis
         )
-        
-        Spacer(modifier = Modifier.height(4.dp))
         
         Text(
             text = "₹${product.price.toInt()}",
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.secondary
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)))
     }
 }

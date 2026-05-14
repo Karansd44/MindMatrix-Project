@@ -2,24 +2,25 @@ package com.kumbar.karn.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// The Modern Heritage Palette
-val HeritageMidnight = Color(0xFF2C3E50) // Primary - Deep Charcoal/Midnight
-val HeritageSienna = Color(0xFFC0392B)   // Secondary - Burnt Sienna/Deep Earthy Red
-val HeritageParchment = Color(0xFFF9F7F2) // Background - Soft Eggshell/Parchment
-val HeritageGold = Color(0xFFD4AF37)     // Accent - Metallic Gold
-val HeritageWhite = Color(0xFFFFFFFF)
-val HeritageGrayLight = Color(0xFFE0E0E0)
-val HeritageGrayDark = Color(0xFF757575)
+// Clean White and Brown Theme Colors
+val EarthBrownDark = Color(0xFF3E2723)   // Deepest Brown (Text, Primary Elements)
+val EarthBrown = Color(0xFF5D4037)       // Medium Brown (Secondary)
+val EarthBrownLight = Color(0xFF8D6E63)  // Soft Warm Brown (Accents)
+val EarthBrownFaded = Color(0xFFD7CCC8)  // Very Light Brown (Subtle backgrounds, borders)
 
-// Semantic naming
-val HeritagePrimary = HeritageMidnight
-val HeritageSecondary = HeritageSienna
-val HeritageAccent = HeritageGold
-val HeritageBackground = HeritageParchment
-val HeritageSurface = HeritageWhite
-val HeritageOnPrimary = HeritageWhite
-val HeritageOnSecondary = HeritageWhite
-val HeritageOnBackground = HeritageMidnight
-val HeritageOnSurface = HeritageMidnight
-val HeritageError = Color(0xFFB00020)
-val HeritageOutline = Color(0xFF2C3E50).copy(alpha = 0.2f)
+val PureWhite = Color(0xFFFFFFFF)        // Cards, Surfaces
+val WarmWhite = Color(0xFFFAFAFA)        // App Background
+
+val ErrorRed = Color(0xFFB00020)
+
+// Semantic Mapping
+val ThemePrimary = EarthBrownDark
+val ThemeSecondary = EarthBrownLight
+val ThemeTertiary = EarthBrownFaded
+val ThemeBackground = WarmWhite
+val ThemeSurface = PureWhite
+val ThemeOnPrimary = PureWhite
+val ThemeOnSecondary = PureWhite
+val ThemeOnBackground = EarthBrownDark
+val ThemeOnSurface = EarthBrownDark
+val ThemeOutline = EarthBrownFaded

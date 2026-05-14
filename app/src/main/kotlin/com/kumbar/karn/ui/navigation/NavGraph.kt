@@ -15,6 +15,7 @@ import com.kumbar.karn.ui.auth.RegisterScreen
 import com.kumbar.karn.ui.gallery.ChatScreen
 import com.kumbar.karn.ui.gallery.GalleryScreen
 import com.kumbar.karn.ui.gallery.StoryGeneratorScreen
+import com.kumbar.karn.ui.profile.ProfileScreen
 
 @Composable
 fun NavGraph(
@@ -58,7 +59,17 @@ fun NavGraph(
                 },
                 onNavigateToFavorites = {
                     // navController.navigate("favorites")
+                },
+                onNavigateToAddProduct = {
+                    navController.navigate("addProduct")
                 }
+            )
+        }
+        composable("addProduct") {
+            com.kumbar.karn.ui.gallery.AddProductScreen(
+                authViewModel = authViewModel,
+                onBack = { navController.popBackStack() },
+                onSuccess = { navController.popBackStack() }
             )
         }
         composable("productDetail/{productId}") { backStackEntry ->
@@ -77,8 +88,15 @@ fun NavGraph(
             )
         }
         composable("profile") {
-            // TODO: Create ProfileScreen
-            Text("Profile Screen")
+            ProfileScreen(
+                authViewModel = authViewModel,
+                onBack = { navController.popBackStack() },
+                onLogoutSuccess = {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

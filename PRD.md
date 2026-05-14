@@ -75,3 +75,42 @@ Rural artisans possess immense skill and produce eco-friendly, health-positive p
 *   **Voice-to-Story:** Allowing artisans to dictate their heritage story in local dialects.
 *   **Marketplace Integration:** Direct "Buy Now" links embedded in Digital Story Cards.
 *   **Community Feed:** A showcase where artisans can view and appreciate each other's crafts.
+
+## 9. Customer Features
+
+The Kumbara-Kala application is designed to provide customers with a smooth, interactive, and culturally rich digital shopping experience focused on handcrafted and artisan products. The application includes several customer-oriented features that improve product discovery, engagement, and convenience while promoting traditional craftsmanship through modern technology.
+
+*   **Product Gallery:** Allows users to browse a wide variety of handcrafted products displayed in an attractive card-based layout. Each product card contains high-quality product images, product names, pricing details, artisan information, and short descriptions.
+*   **User Authentication System:** Secure login/registration powered by Firebase Authentication. Customers can maintain personalized shopping experiences, save preferences, and manage profile details.
+*   **Favorites and Wishlist System:** Customers can quickly add or remove products from their favorites list using simple interactive buttons for future viewing or purchase consideration.
+*   **AI-Powered Product Storytelling:** Uses Gemini API to automatically generate creative and culturally meaningful product descriptions and artisan stories, detailing the history, craftsmanship, and materials.
+*   **AI Chat Assistant:** An intelligent conversational interface for asking questions about products, artisan collections, product recommendations, and craft details.
+*   **Responsive Multi-Device Interface:** Ensures smooth usability across smartphones, tablets, and desktop devices, automatically adapting to different screen sizes.
+*   **Real-Time Product Updates:** Powered by Firebase Firestore, ensuring customers view the latest product information, stock availability, and artisan updates instantly without manual refreshes.
+*   **Social Sharing Card Generator:** Generate visually appealing product cards that can be shared on social media platforms to promote artisan products digitally.
+*   **Accessibility and Ease of Use:** Touch-friendly controls, intuitive navigation, readable fonts, high-contrast colour combinations, and simplified interaction flows.
+
+## 10. Additional Artisan Features (Roadmap)
+
+The Kumbara-Kala application can be further enhanced with several advanced artisan-focused features that improve product management, business growth, customer interaction, and digital empowerment for local craftsmen.
+
+1. **Artisan Dashboard:** A complete overview displaying total products uploaded, total orders received, revenue summary, most viewed products, customer engagement statistics, and product performance analytics.
+2. **Product Upload & Inventory Management:** Advanced system to add/edit products, upload multiple images, update stock quantity, mark availability, and categorize by craft type.
+3. **Order Management System:** Track and manage purchases (view incoming, accept/reject, update status, track shipping, generate invoices, view history).
+4. **Secure Online Payment Integration:** UPI, Google Pay, PhonePe, Razorpay, and Card integration for secure direct payments.
+5. **AI-Based Product Description Generator:** Expanded Gemini AI module for SEO-friendly titles, social media captions, and marketing taglines.
+6. **Multilingual Support:** Broad regional language support (Kannada, Hindi, Tamil, Telugu, English) for accessibility.
+7. **Customer Review & Rating System:** Product ratings, written reviews, and feedback on craftsmanship to build credibility.
+8. **Live Chat with Customers:** Real-time chat for custom requests, clarifications, negotiation, and delivery discussions.
+9. **Personalized Artisan Profile Pages:** Dedicated pages with biography, specialization, experience, workshop photos, social links, and collections.
+10. **AI-Based Product Recommendation System:** Suggestions for similar products, trending crafts, and personalized/seasonal recommendations.
+11. **Product Analytics & Insights:** Data on most viewed/purchased items, demographics, peak times, and sales trends.
+12. **Social Media Promotion Tools:** Automated generation of Instagram posts, WhatsApp cards, and Facebook banners.
+13. **QR Code Product Sharing:** Unique QR codes for offline-to-online product promotion.
+14. **Workshop & Event Booking Feature:** Platform for artisans to host and users to book craft workshops and live demonstrations.
+15. **Voice Search & Voice Assistance:** Speech-based product search in regional languages.
+16. **Offline Product Draft Saving:** Offline creation and automatic upload of product drafts for low-network areas.
+17. **Delivery & Logistics Integration:** Shipment tracking, delivery estimates, labels, and returns management.
+18. **Certification & Authenticity Verification:** Digital authenticity badges for handmade products to build trust.
+19. **Community & Collaboration Forum:** A space for artisans to share experiences, collaborate, discuss techniques, and learn business strategies.
+20. **Government Scheme & Training Notifications:** Alerts for subsidies, training programs, welfare schemes, and marketplace opportunities.

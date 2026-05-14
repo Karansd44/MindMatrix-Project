@@ -31,4 +31,12 @@ object AppModule {
     @Provides
     @Singleton
     fun provideProductRepository(impl: FirestoreProductRepositoryImpl): ProductRepository = impl
+
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage(): com.google.firebase.storage.FirebaseStorage = com.google.firebase.storage.FirebaseStorage.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideStorageRepository(impl: com.kumbar.karn.data.repository.FirebaseStorageRepositoryImpl): com.kumbar.karn.data.repository.StorageRepository = impl
 }

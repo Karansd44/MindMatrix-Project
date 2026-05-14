@@ -1,5 +1,7 @@
 package com.kumbar.karn.ui.auth
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +27,8 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("customer") } // Default to customer
+    
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -60,6 +64,27 @@ fun RegisterScreen(
             )
             
             Spacer(modifier = Modifier.height(48.dp))
+
+            // Role Selector
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                RoleOption(
+                    label = "CUSTOMER",
+                    selected = role == "customer",
+                    modifier = Modifier.weight(1f),
+                    onClick = { role = "customer" }
+                )
+                RoleOption(
+                    label = "ARTISAN",
+                    selected = role == "artisan",
+                    modifier = Modifier.weight(1f),
+                    onClick = { role = "artisan" }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
             
             OutlinedTextField(
                 value = name,
@@ -139,7 +164,7 @@ fun RegisterScreen(
             Button(
                 onClick = { 
                     if (password == confirmPassword) {
-                        viewModel.register(User(name = name, email = email), password)
+                        viewModel.register(User(name = name, email = email, role = role), password)
                     }
                 },
                 modifier = Modifier
@@ -181,5 +206,29 @@ fun RegisterScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun RoleOption(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier.clickable { onClick() },
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        shape = MaterialTheme.shapes.small,
+        border = if (selected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(vertical = 12.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            letterSpacing = 1.sp
+        )
     }
 }
