@@ -6,6 +6,18 @@
 
 ---
 
+## 📸 App Screenshots
+
+<p align="center">
+  <img src="assets/images/gallery_screen.png" width="30%" alt="Gallery Screen Mockup">
+  &nbsp;
+  <img src="assets/images/story_card.png" width="30%" alt="Story Card Mockup">
+  &nbsp;
+  <img src="assets/images/profile_screen.png" width="30%" alt="Profile Screen Mockup">
+</p>
+
+---
+
 ## 1. 📁 Repository Structure
 
 **Rating: ★★★★☆ (4/5)**
